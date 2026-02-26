@@ -467,7 +467,7 @@ const Home = ({ notes, weddingDetails }: any) => {
             >
               <div className="traditional-border rounded-2xl overflow-hidden aspect-[4/5]">
                 <img 
-                  src="https://picsum.photos/seed/telangana-bride/1000/1250" 
+                  src="https://ibb.co/gFzH7gnG" 
                   alt="Tradition" 
                   className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" 
                   referrerPolicy="no-referrer" 
