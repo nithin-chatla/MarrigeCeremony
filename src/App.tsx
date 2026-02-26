@@ -467,7 +467,7 @@ const Home = ({ notes, weddingDetails }: any) => {
             >
               <div className="traditional-border rounded-2xl overflow-hidden aspect-[4/5]">
                 <img 
-                  src="https://ibb.co/gFzH7gnG" 
+                  src="https://res.cloudinary.com/dugnv4zww/image/upload/v1772126004/IMG_20260226_222809_zwdmbr.jpg" 
                   alt="Tradition" 
                   className="w-full h-full object-cover transition-transform duration-1000 hover:scale-105" 
                   referrerPolicy="no-referrer" 
