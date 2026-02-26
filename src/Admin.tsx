@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Upload, Trash2, Image as ImageIcon, Plus, Check, AlertCircle, ArrowLeft, Save } from 'lucide-react';
+import { Upload, Trash2, Image as ImageIcon, Plus, Check, AlertCircle, ArrowLeft, Save, MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchWeddingDetails, updateWeddingDetails, fetchGalleryImages, addGalleryImage, deleteGalleryImage } from './cms-service';
+import { fetchWeddingDetails, updateWeddingDetails, fetchGalleryImages, addGalleryImage, deleteGalleryImage, fetchBlessings, deleteBlessing } from './cms-service';
 import { type GalleryImage } from './wedding-config';
 
 declare global {
@@ -14,6 +14,7 @@ declare global {
 export default function Admin() {
   const [details, setDetails] = useState<any>(null);
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [blessings, setBlessings] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
@@ -23,6 +24,8 @@ export default function Admin() {
       if (d) setDetails(d);
       const i = await fetchGalleryImages();
       setImages(i);
+      const b = await fetchBlessings();
+      setBlessings(b);
     };
     loadData();
 
@@ -48,8 +51,8 @@ export default function Admin() {
   };
 
   const handleUpload = () => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dugnv4zww";
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "marrige";
 
     if (!cloudName || !uploadPreset) {
       alert("Cloudinary is not configured. Please set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in your environment variables.");
@@ -86,6 +89,12 @@ export default function Admin() {
     if (!confirm('Delete this image?')) return;
     await deleteGalleryImage(id);
     setImages(images.filter(img => img.id !== id));
+  };
+
+  const handleDeleteBlessing = async (id: string) => {
+    if (!confirm('Delete this blessing?')) return;
+    await deleteBlessing(id);
+    setBlessings(blessings.filter(b => b.id !== id));
   };
 
   if (!details) return <div className="min-h-screen bg-telangana-cream flex items-center justify-center font-traditional text-2xl">Loading Sanctuary...</div>;
@@ -207,7 +216,7 @@ export default function Admin() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="grid grid-cols-2 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {images.map(img => (
                   <div key={img.id} className="relative group aspect-square rounded-2xl overflow-hidden border-2 border-stone-100">
                     <img src={img.url} className="w-full h-full object-cover" />
@@ -219,6 +228,30 @@ export default function Admin() {
                         <Trash2 size={16} />
                       </button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Blessings CMS */}
+            <div className="glass-card p-8 rounded-[2rem] traditional-border">
+              <h2 className="text-2xl font-traditional font-bold text-telangana-red mb-8 flex items-center gap-3">
+                <MessageSquare className="text-telangana-gold" /> Blessings
+              </h2>
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {blessings.map(b => (
+                  <div key={b.id} className="p-4 bg-white rounded-xl border-2 border-stone-100 flex justify-between items-start">
+                    <div>
+                      <p className="font-bold text-telangana-red">{b.name}</p>
+                      <p className="text-stone-500 text-sm italic">"{b.message}"</p>
+                      <p className="text-[9px] text-stone-400 uppercase tracking-widest mt-1">{b.date}</p>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteBlessing(b.id)}
+                      className="text-stone-300 hover:text-telangana-red transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
               </div>

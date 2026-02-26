@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'motion/react';
-import { Heart, Calendar, MapPin, Clock, Send, Music, Camera, Info, Image as ImageIcon, MessageSquare, Star, ChevronRight, ChevronLeft, Volume2, VolumeX, Sparkles, Quote, Download, X, Maximize2, Flower2, Sun, Flame, ArrowLeft } from 'lucide-react';
+import { Heart, Calendar, MapPin, Clock, Send, Music, Camera, Info, Image as ImageIcon, MessageSquare, Star, ChevronRight, ChevronLeft, Volume2, VolumeX, Sparkles, Quote, Download, X, Maximize2, Flower2, Sun, Flame, ArrowLeft, Loader2, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format, differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
@@ -12,7 +12,7 @@ function cn(...inputs: ClassValue[]) {
 }
 
 import { WEDDING_DETAILS, GALLERY_IMAGES, type GalleryImage } from './wedding-config';
-import { fetchWeddingDetails, fetchGalleryImages } from './cms-service';
+import { fetchWeddingDetails, fetchGalleryImages, fetchBlessings } from './cms-service';
 import Admin from './Admin';
 
 const WEDDING_DATE = new Date(WEDDING_DETAILS.date);
@@ -344,7 +344,7 @@ const SectionHeading = ({ title, subtitle, light = false }: { title: string; sub
   </div>
 );
 
-const Nav = ({ navBg, setIsMuted, isMuted, setIsNoteOpen }: any) => {
+const Nav = ({ navBg, setIsMuted, isMuted }: any) => {
   const location = useLocation();
   const isGalleryPage = location.pathname === '/gallery';
 
@@ -376,18 +376,12 @@ const Nav = ({ navBg, setIsMuted, isMuted, setIsNoteOpen }: any) => {
         <button onClick={() => setIsMuted(!isMuted)} className="text-white/70 hover:text-telangana-yellow transition-colors p-2">
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} className="animate-pulse" />}
         </button>
-        <button 
-          onClick={() => setIsNoteOpen(true)}
-          className="text-white text-[9px] uppercase tracking-[0.3em] border border-telangana-yellow/40 px-6 py-2 rounded-lg hover:bg-telangana-yellow hover:text-telangana-red transition-all duration-500 backdrop-blur-md font-bold"
-        >
-          Give Blessing
-        </button>
       </div>
     </motion.nav>
   );
 };
 
-const Home = ({ setIsNoteOpen, notes, setNotes, weddingDetails }: any) => {
+const Home = ({ notes, weddingDetails }: any) => {
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
@@ -657,15 +651,9 @@ const Home = ({ setIsNoteOpen, notes, setNotes, weddingDetails }: any) => {
           <div className="grid lg:grid-cols-3 gap-24">
             <div className="lg:col-span-1 space-y-12">
               <div className="space-y-6">
-                <h3 className="text-5xl font-traditional font-bold text-telangana-red">Preserve a <br /> <span className="text-telangana-gold">Blessing.</span></h3>
-                <p className="text-stone-600 leading-relaxed text-lg font-traditional">Your words are the sacred threads that weave our story together. Leave a blessing that will be cherished for a lifetime.</p>
+                <h3 className="text-5xl font-traditional font-bold text-telangana-red">Sacred <br /> <span className="text-telangana-gold">Blessings.</span></h3>
+                <p className="text-stone-600 leading-relaxed text-lg font-traditional">These words are the sacred threads that weave our story together. Blessings that will be cherished for a lifetime.</p>
               </div>
-              <button 
-                onClick={() => setIsNoteOpen(true)}
-                className="btn-traditional"
-              >
-                Give Blessing
-              </button>
             </div>
             <div className="lg:col-span-2 grid md:grid-cols-2 gap-8 max-h-[700px] overflow-y-auto pr-6 custom-scrollbar">
               <AnimatePresence mode='popLayout'>
@@ -715,52 +703,32 @@ const GalleryPage = () => {
 };
 
 export default function App() {
-  const [isNoteOpen, setIsNoteOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [noteStatus, setNoteStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
-  const [notes, setNotes] = useState([
-    { name: 'Emily & Mark', message: 'Wishing you both a lifetime of happiness and love!', date: 'Feb 24, 2026' },
-    { name: 'Niharika\'s Mom', message: 'So proud of the woman you\'ve become. Welcome to the family, Sravan!', date: 'Feb 25, 2026' },
-  ]);
+  const [notes, setNotes] = useState<any[]>([]);
   const [weddingDetails, setWeddingDetails] = useState<any>(WEDDING_DETAILS);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadDetails = async () => {
+    const loadData = async () => {
       try {
-        const d = await fetchWeddingDetails();
-        if (d) setWeddingDetails(d);
+        const [details, b] = await Promise.all([
+          fetchWeddingDetails(),
+          fetchBlessings()
+        ]);
+        if (details) setWeddingDetails(details);
+        if (b) setNotes(b);
       } catch (error) {
-        console.error("Failed to fetch wedding details:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    loadDetails();
+    loadData();
   }, []);
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
   const navBg = useTransform(scrollYProgress, [0, 0.1], ["rgba(0,0,0,0)", "rgba(139, 0, 0, 0.95)"]);
-
-  const handleLeaveNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    setNoteStatus('submitting');
-    const form = e.target as HTMLFormElement;
-    const name = (form.elements.namedItem('name') as HTMLInputElement).value;
-    const message = (form.elements.namedItem('message') as HTMLTextAreaElement).value;
-
-    setTimeout(() => {
-      setNotes([{ name, message, date: format(new Date(), 'MMM d, yyyy') }, ...notes]);
-      setNoteStatus('success');
-      confetti({ 
-        particleCount: 150, 
-        spread: 70, 
-        origin: { y: 0.6 }, 
-        colors: ['#8B0000', '#FFD700', '#FF8C00'] 
-      });
-    }, 1000);
-  };
 
   if (isLoading) return <div className="min-h-screen bg-telangana-cream flex items-center justify-center font-traditional text-2xl">Loading Sanctuary...</div>;
 
@@ -775,10 +743,10 @@ export default function App() {
           style={{ scaleX }}
         />
         
-        <Nav navBg={navBg} setIsMuted={setIsMuted} isMuted={isMuted} setIsNoteOpen={setIsNoteOpen} />
+        <Nav navBg={navBg} setIsMuted={setIsMuted} isMuted={isMuted} />
 
         <Routes>
-          <Route path="/" element={<Home setIsNoteOpen={setIsNoteOpen} notes={notes} setNotes={setNotes} weddingDetails={weddingDetails} />} />
+          <Route path="/" element={<Home notes={notes} weddingDetails={weddingDetails} />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/admin" element={<Admin />} />
         </Routes>
@@ -821,77 +789,6 @@ export default function App() {
             </div>
           </div>
         </footer>
-
-        {/* Note Modal */}
-        <AnimatePresence>
-          {isNoteOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
-            >
-              <div className="absolute inset-0 bg-telangana-red/90 backdrop-blur-xl" onClick={() => setIsNoteOpen(false)} />
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 30 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 30 }}
-                className="relative bg-telangana-cream w-full max-w-2xl rounded-[2rem] overflow-hidden shadow-2xl glass-card traditional-border"
-              >
-                <div className="p-12 md:p-24">
-                  <button onClick={() => setIsNoteOpen(false)} className="absolute top-12 right-12 text-telangana-red/40 hover:text-telangana-yellow transition-all hover:rotate-90">
-                    <X size={32} strokeWidth={1} />
-                  </button>
-
-                  {noteStatus === 'success' ? (
-                    <div className="text-center py-12">
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 bg-telangana-yellow rounded-full flex items-center justify-center mx-auto mb-12 shadow-xl">
-                        <Flower2 className="w-12 h-12 text-telangana-red fill-telangana-red" />
-                      </motion.div>
-                      <h3 className="text-5xl font-traditional font-bold mb-8 text-telangana-red">Blessing Received</h3>
-                      <p className="text-stone-500 text-xl font-traditional">Your sacred wishes have been added to our eternal sanctuary.</p>
-                      <button onClick={() => { setIsNoteOpen(false); setNoteStatus('idle'); }} className="mt-16 btn-traditional">Return to Sanctuary</button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="mb-12">
-                        <h3 className="text-5xl font-traditional font-bold text-telangana-red mb-4">Leave a Blessing</h3>
-                        <p className="text-stone-500 font-traditional">Share your sacred wishes for our new journey together.</p>
-                      </div>
-                      <form onSubmit={handleLeaveNote} className="space-y-8">
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase tracking-widest font-bold text-telangana-orange block ml-4">Your Name</label>
-                          <input 
-                            name="name"
-                            required
-                            placeholder="e.g. Sri & Smt. Sharma"
-                            className="w-full bg-white/50 border-2 border-telangana-red/10 rounded-2xl px-8 py-4 focus:border-telangana-red outline-none transition-all font-traditional text-lg"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase tracking-widest font-bold text-telangana-orange block ml-4">Your Blessing</label>
-                          <textarea 
-                            name="message"
-                            required
-                            rows={4}
-                            placeholder="Write your sacred wishes here..."
-                            className="w-full bg-white/50 border-2 border-telangana-red/10 rounded-2xl px-8 py-4 focus:border-telangana-red outline-none transition-all font-traditional text-lg resize-none"
-                          />
-                        </div>
-                        <button 
-                          disabled={noteStatus === 'submitting'}
-                          className="w-full btn-traditional py-6 text-xl"
-                        >
-                          {noteStatus === 'submitting' ? 'Sending Blessing...' : 'Preserve Blessing'}
-                        </button>
-                      </form>
-                    </>
-                  )}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </BrowserRouter>
   );

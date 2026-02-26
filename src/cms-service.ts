@@ -39,3 +39,22 @@ export const addGalleryImage = async (image: Omit<GalleryImage, 'id'>) => {
 export const deleteGalleryImage = async (id: string) => {
   await deleteDoc(doc(db, "gallery", id));
 };
+
+export const fetchBlessings = async () => {
+  const q = query(collection(db, "blessings"), orderBy("created_at", "desc"));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const addBlessing = async (blessing: { name: string; message: string }) => {
+  const docRef = await addDoc(collection(db, "blessings"), {
+    ...blessing,
+    created_at: new Date().toISOString(),
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  });
+  return docRef.id;
+};
+
+export const deleteBlessing = async (id: string) => {
+  await deleteDoc(doc(db, "blessings", id));
+};
